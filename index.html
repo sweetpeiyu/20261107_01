@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101a3d">
+  <title>數學星球大冒險</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      background: #101a3d;
+      color: #f7f4ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 28px 18px 42px;
+      background:
+        radial-gradient(ellipse at 16% 5%, rgba(82, 113, 255, .25), transparent 36rem),
+        radial-gradient(ellipse at 88% 34%, rgba(40, 216, 194, .12), transparent 32rem),
+        #101a3d;
+    }
+
+    main { width: min(100%, 1024px); margin: 0 auto; }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: #8fe9df;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      line-height: 1.18;
+    }
+
+    .intro {
+      max-width: 720px;
+      margin: 10px 0 20px;
+      color: #c9d1ee;
+      line-height: 1.7;
+    }
+
+    .game-card {
+      overflow: hidden;
+      border: 1px solid rgba(177, 192, 255, .2);
+      border-radius: 24px;
+      background: #17234d;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .32);
+    }
+
+    #game {
+      width: 100%;
+      line-height: 0;
+      background: #111b3d;
+    }
+
+    #game canvas {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+      touch-action: none;
+    }
+
+    .below-game {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 20px 18px;
+      border-top: 1px solid rgba(177, 192, 255, .13);
+      background: rgba(8, 16, 43, .45);
+    }
+
+    .how-to { margin: 0; color: #d8def5; line-height: 1.6; }
+    .how-to strong { color: #fff0a6; }
+
+    .dpad {
+      display: grid;
+      flex: 0 0 auto;
+      grid-template-columns: repeat(3, 46px);
+      grid-template-rows: repeat(2, 42px);
+      gap: 5px;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .dpad button {
+      border: 1px solid rgba(202, 211, 255, .28);
+      border-radius: 12px;
+      background: #293969;
+      color: #fff;
+      font: inherit;
+      font-size: 1.15rem;
+      font-weight: 800;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dpad button:active { background: #5269c1; transform: translateY(1px); }
+    .dpad button:focus-visible { outline: 3px solid #ffe27c; outline-offset: 2px; }
+    .dpad [data-dir="up"] { grid-column: 2; grid-row: 1; }
+    .dpad [data-dir="left"] { grid-column: 1; grid-row: 2; }
+    .dpad [data-dir="down"] { grid-column: 2; grid-row: 2; }
+    .dpad [data-dir="right"] { grid-column: 3; grid-row: 2; }
+
+    .note {
+      margin: 14px 2px 0;
+      color: #aeb9de;
+      font-size: .88rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 620px) {
+      body { padding: 20px 10px 28px; }
+      .game-card { border-radius: 18px; }
+      .below-game { align-items: flex-start; padding: 13px; }
+      .how-to { font-size: .9rem; }
+      .dpad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(2, 38px); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">MATH QUEST · 5 LEVELS</p>
+    <h1>數學星球大冒險</h1>
+    <p class="intro">駕駛小機器人，在星球上找到每一題的正確答案。答對加 10 分，答錯扣 5 分，完成五關就能成為數學探險家！</p>
+
+    <section class="game-card" aria-label="數學星球大冒險遊戲">
+      <div id="game"></div>
+      <div class="below-game">
+        <p class="how-to"><strong>怎麼玩：</strong>使用方向鍵或 WASD 移動，碰到答案星球作答。手機可按右側方向鍵。</p>
+        <div class="dpad" aria-label="角色移動控制">
+          <button type="button" data-dir="up" aria-label="向上">▲</button>
+          <button type="button" data-dir="left" aria-label="向左">◀</button>
+          <button type="button" data-dir="down" aria-label="向下">▼</button>
+          <button type="button" data-dir="right" aria-label="向右">▶</button>
+        </div>
+      </div>
+    </section>
+    <p class="note">遊戲不設倒數計時；答錯的星球會消失，正確答案會留在場上，放心慢慢找。</p>
+    <p id="live" class="note" role="status" aria-live="polite">準備開始數學冒險。</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser&#64;3.90.0/dist/phaser.min.js"></script>
+  <script>
+    const WIDTH = 960;
+    const HEIGHT = 600;
+    const MOVE_SPEED = 270;
+    const touchState = { up: false, down: false, left: false, right: false };
+    const liveRegion = document.getElementById("live");
+
+    document.querySelectorAll(".dpad button").forEach((button) => {
+      const direction = button.dataset.dir;
+      const release = (event) => {
+        if (event) event.preventDefault();
+        touchState[direction] = false;
+      };
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        touchState[direction] = true;
+        button.setPointerCapture(event.pointerId);
+      });
+      button.addEventListener("pointerup", release);
+      button.addEventListener("pointercancel", release);
+      button.addEventListener("lostpointercapture", release);
+      button.addEventListener("contextmenu", (event) => event.preventDefault());
+    });
+
+    const levels = [
+      { question: "2 + 3 = ?", answer: 5, choices: [5, 4, 6, 8], skill: "加法暖身" },
+      { question: "9 + 6 = ?", answer: 15, choices: [13, 14, 15, 16], skill: "加法挑戰" },
+      { question: "18 − 7 = ?", answer: 11, choices: [9, 10, 11, 12], skill: "減法探險" },
+      { question: "4 × 5 = ?", answer: 20, choices: [16, 18, 20, 24], skill: "乘法星球" },
+      { question: "36 ÷ 6 = ?", answer: 6, choices: [4, 5, 6, 8], skill: "除法終極關" }
+    ];
+
+    class MathQuest extends Phaser.Scene {
+      constructor() {
+        super("MathQuest");
+        this.score = 0;
+        this.levelIndex = 0;
+        this.started = false;
+        this.levelActive = false;
+        this.answers = [];
+      }
+
+      create() {
+        this.drawWorld();
+        this.createHud();
+        this.createPlayer();
+        this.setupKeyboard();
+        this.showIntro();
+        this.updateLive("準備開始數學冒險。使用方向鍵或 WASD 移動角色。");
+      }
+
+      drawWorld() {
+        this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x111b3d);
+
+        const stars = [
+          [55, 178], [120, 318], [235, 180], [322, 505], [405, 221], [540, 174],
+          [660, 516], [760, 183], [865, 304], [905, 470], [78, 482], [507, 527],
+          [275, 440], [686, 250], [882, 218], [426, 480], [156, 231], [790, 493]
+        ];
+        stars.forEach(([x, y], index) => {
+          const dot = this.add.circle(x, y, index % 4 === 0 ? 3 : 2, index % 2 ? 0x8eabff : 0xffe69b, .72);
+          this.tweens.add({ targets: dot, alpha: .25, duration: 900 + (index % 5) * 180, yoyo: true, repeat: -1, delay: index * 35 });
+        });
+
+        this.add.ellipse(140, 590, 510, 195, 0x17395b, .8);
+        this.add.ellipse(835, 596, 570, 210, 0x174656, .78);
+        this.add.ellipse(494, 635, 520, 175, 0x173b59, .72);
+        this.add.rectangle(WIDTH / 2, 118, WIDTH, 2, 0x6272bd, .4);
+
+        const field = this.add.graphics();
+        field.lineStyle(1, 0x9bacff, .13);
+        field.strokeRoundedRect(22, 157, 916, 382, 24);
+        field.lineStyle(1, 0x8ce9de, .08);
+        for (let x = 74; x < WIDTH - 50; x += 74) field.lineBetween(x, 177, x, 520);
+        for (let y = 220; y < 530; y += 74) field.lineBetween(40, y, 920, y);
+
+        this.physics.world.setBounds(25, 162, 910, 370);
+      }
+
+      createHud() {
+        this.add.text(30, 24, "✦ 星星數學站", {
+          fontFamily: "Arial, sans-serif", fontSize: "25px", fontStyle: "bold", color: "#ffffff"
+        });
+        this.add.text(33, 61, "收集正確答案，點亮五顆星球", {
+          fontFamily: "Arial, sans-serif", fontSize: "15px", color: "#bdc9f0"
+        });
+
+        this.levelText = this.add.text(635, 30, "第 1 關 / 共 5 關", {
+          fontFamily: "Arial, sans-serif", fontSize: "20px", fontStyle: "bold", color: "#d8e2ff"
+        });
+        this.scoreText = this.add.text(842, 29, "★ 0 分", {
+          fontFamily: "Arial, sans-serif", fontSize: "21px", fontStyle: "bold", color: "#ffe27c"
+        }).setOrigin(1, 0);
+
+        this.questionPanel = this.add.rectangle(WIDTH / 2, 118, 916, 66, 0x273968, .96).setStrokeStyle(2, 0x6175c1, .78);
+        this.questionText = this.add.text(WIDTH / 2, 118, "準備好開始了嗎？", {
+          fontFamily: "Arial, sans-serif", fontSize: "29px", fontStyle: "bold", color: "#ffffff"
+        }).setOrigin(.5);
+        this.toastText = this.add.text(WIDTH / 2, 198, "", {
+          fontFamily: "Arial, sans-serif", fontSize: "20px", fontStyle: "bold", color: "#ffffff",
+          backgroundColor: "#18254c", padding: { x: 14, y: 8 }, align: "center"
+        }).setOrigin(.5).setAlpha(0);
+      }
+
+      createPlayer() {
+        const art = this.make.graphics({ x: 0, y: 0, add: false });
+        art.fillStyle(0x42d7c7, 1);
+        art.fillRoundedRect(5, 12, 52, 48, 15);
+        art.lineStyle(4, 0xe3fffb, 1);
+        art.strokeRoundedRect(5, 12, 52, 48, 15);
+        art.fillStyle(0xffd166, 1);
+        art.fillCircle(31, 8, 5);
+        art.fillRect(29, 3, 4, 8);
+        art.fillStyle(0x16304d, 1);
+        art.fillRoundedRect(14, 25, 12, 13, 4);
+        art.fillRoundedRect(36, 25, 12, 13, 4);
+        art.fillStyle(0xffffff, 1);
+        art.fillCircle(19, 30, 2);
+        art.fillCircle(41, 30, 2);
+        art.fillStyle(0x1b5360, 1);
+        art.fillRoundedRect(22, 45, 18, 5, 2);
+        art.generateTexture("math-robot", 62, 66);
+        art.destroy();
+
+        this.player = this.physics.add.sprite(WIDTH / 2, 492, "math-robot");
+        this.player.setDepth(3).setCollideWorldBounds(true);
+        this.player.body.setSize(42, 44).setOffset(10, 15);
+        this.player.body.setAllowGravity(false);
+      }
+
+      setupKeyboard() {
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.wasd = this.input.keyboard.addKeys("W,A,S,D");
+        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+      }
+
+      showIntro() {
+        this.introGroup = this.add.container(0, 0);
+        const shade = this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x08112e, .84);
+        const panel = this.add.rectangle(WIDTH / 2, 328, 640, 332, 0x202f60, .99).setStrokeStyle(3, 0x8ca0ff, .8);
+        const title = this.add.text(WIDTH / 2, 211, "準備出發了嗎？", {
+          fontFamily: "Arial, sans-serif", fontSize: "36px", fontStyle: "bold", color: "#fff2ac"
+        }).setOrigin(.5);
+        const details = this.add.text(WIDTH / 2, 285,
+          "移動小機器人，碰到正確答案星球就能過關！\n答對 +10 分　答錯 −5 分\n一共有 5 關：加法、減法、乘法和除法。",
+          { fontFamily: "Arial, sans-serif", fontSize: "21px", color: "#eff2ff", align: "center", lineSpacing: 11 }
+        ).setOrigin(.5);
+        const buttonBg = this.add.rectangle(WIDTH / 2, 420, 246, 62, 0x4bd6c4, 1).setStrokeStyle(2, 0xc3fff3, .9);
+        const buttonText = this.add.text(WIDTH / 2, 420, "開始闖關  ▶", {
+          fontFamily: "Arial, sans-serif", fontSize: "23px", fontStyle: "bold", color: "#102747"
+        }).setOrigin(.5);
+        buttonBg.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.startGame());
+        buttonText.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.startGame());
+        this.introGroup.add([shade, panel, title, details, buttonBg, buttonText]);
+      }
+
+      startGame() {
+        if (this.started) return;
+        this.started = true;
+        if (this.introGroup) this.introGroup.destroy(true);
+        this.score = 0;
+        this.levelIndex = 0;
+        this.updateScore();
+        this.startLevel();
+      }
+
+      startLevel() {
+        this.answers.forEach((orb) => orb.destroy());
+        this.answers = [];
+        this.levelActive = true;
+        this.player.setPosition(WIDTH / 2, 492).setVelocity(0, 0).clearTint();
+
+        const level = levels[this.levelIndex];
+        this.levelText.setText(`第 ${this.levelIndex + 1} 關 / 共 ${levels.length} 關`);
+        this.questionText.setText(`${level.skill}　　${level.question}`);
+        this.updateLive(`第 ${this.levelIndex + 1} 關：${level.question}。目前 ${this.score} 分。`);
+        this.toastText.setAlpha(0);
+
+        const choices = Phaser.Utils.Array.Shuffle([...level.choices]);
+        const positions = [
+          [156, 276], [370, 405], [590, 293], [807, 431]
+        ];
+        choices.forEach((value, index) => {
+          const [x, y] = positions[index];
+          const tint = [0x5269cb, 0x7559cb, 0x3d8fb6, 0x4669a8][index];
+          const halo = this.add.circle(0, 0, 49, tint, .22);
+          const ball = this.add.circle(0, 0, 39, tint, 1).setStrokeStyle(4, 0xdbe6ff, .96);
+          const shine = this.add.circle(-12, -15, 7, 0xffffff, .34);
+          const label = this.add.text(0, 2, String(value), {
+            fontFamily: "Arial, sans-serif", fontSize: "34px", fontStyle: "bold", color: "#ffffff"
+          }).setOrigin(.5);
+          const orb = this.add.container(x, y, [halo, ball, shine, label]).setDepth(2);
+          orb.answerValue = value;
+          orb.collected = false;
+          this.physics.add.existing(orb);
+          orb.body.setCircle(37).setAllowGravity(false).setImmovable(true);
+          this.physics.add.overlap(this.player, orb, () => this.collectAnswer(orb), null, this);
+          this.tweens.add({ targets: orb, y: y - 9, duration: 780 + index * 75, yoyo: true, repeat: -1, ease: "Sine.easeInOut", delay: index * 110 });
+          this.answers.push(orb);
+        });
+      }
+
+      collectAnswer(orb) {
+        if (!this.levelActive || orb.collected) return;
+        orb.collected = true;
+        orb.body.enable = false;
+        const correct = orb.answerValue === levels[this.levelIndex].answer;
+        this.score += correct ? 10 : -5;
+        this.updateScore();
+
+        if (correct) {
+          this.levelActive = false;
+          this.player.setTint(0xffef9a);
+          this.showToast("答對了！ +10 分　下一關出發！", "#fff1a6");
+          this.answers.forEach((item) => { if (item.body) item.body.enable = false; });
+          this.tweens.add({ targets: this.player, scale: 1.18, duration: 190, yoyo: true, repeat: 1 });
+          this.updateLive(`答對了！加 10 分，目前 ${this.score} 分。`);
+          this.time.delayedCall(1150, () => {
+            this.levelIndex += 1;
+            if (this.levelIndex >= levels.length) this.showFinish();
+            else this.startLevel();
+          });
+        } else {
+          this.showToast("這顆不對，−5 分！再找找看。", "#ffd0d0");
+          this.updateLive(`這個答案不正確，扣 5 分。目前 ${this.score} 分。`);
+          this.tweens.add({ targets: orb, alpha: 0, scale: .45, duration: 220, onComplete: () => orb.destroy() });
+        }
+      }
+
+      updateScore() {
+        this.scoreText.setText(`★ ${this.score} 分`);
+      }
+
+      showToast(message, color) {
+        this.toastText.setText(message).setColor(color).setAlpha(1);
+        this.tweens.killTweensOf(this.toastText);
+        this.tweens.add({ targets: this.toastText, alpha: 0, delay: 820, duration: 260 });
+      }
+
+      showFinish() {
+        this.levelActive = false;
+        this.player.setVelocity(0, 0).clearTint();
+        this.questionText.setText("五顆星球都點亮了！");
+        const praise = this.score >= 50 ? "太厲害了！你是數學星球高手！" : this.score >= 25 ? "做得很好！繼續保持好奇心！" : "完成五關了！再玩一次，挑戰更高分！";
+
+        const group = this.add.container(0, 0).setDepth(10);
+        const shade = this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x08112e, .88);
+        const panel = this.add.rectangle(WIDTH / 2, 328, 650, 342, 0x202f60, .99).setStrokeStyle(3, 0x8ca0ff, .8);
+        const title = this.add.text(WIDTH / 2, 218, "🎉 闖關成功！", {
+          fontFamily: "Arial, sans-serif", fontSize: "37px", fontStyle: "bold", color: "#fff2ac"
+        }).setOrigin(.5);
+        const score = this.add.text(WIDTH / 2, 295, `最後得分：${this.score} 分`, {
+          fontFamily: "Arial, sans-serif", fontSize: "30px", fontStyle: "bold", color: "#ffffff"
+        }).setOrigin(.5);
+        const message = this.add.text(WIDTH / 2, 353, praise, {
+          fontFamily: "Arial, sans-serif", fontSize: "20px", color: "#d8e4ff", align: "center"
+        }).setOrigin(.5);
+        const buttonBg = this.add.rectangle(WIDTH / 2, 430, 236, 60, 0x4bd6c4, 1).setStrokeStyle(2, 0xc3fff3, .9);
+        const buttonText = this.add.text(WIDTH / 2, 430, "再玩一次  ↻", {
+          fontFamily: "Arial, sans-serif", fontSize: "22px", fontStyle: "bold", color: "#102747"
+        }).setOrigin(.5);
+        const restart = () => {
+          group.destroy(true);
+          this.started = false;
+          this.showIntro();
+          this.updateLive("準備再次挑戰五個關卡。");
+        };
+        buttonBg.setInteractive({ useHandCursor: true }).on("pointerdown", restart);
+        buttonText.setInteractive({ useHandCursor: true }).on("pointerdown", restart);
+        group.add([shade, panel, title, score, message, buttonBg, buttonText]);
+        this.updateLive(`闖關完成，總分 ${this.score} 分。${praise}`);
+      }
+
+      updateLive(message) {
+        liveRegion.textContent = message;
+      }
+
+      update() {
+        if (!this.started && Phaser.Input.Keyboard.JustDown(this.enterKey)) {
+          this.startGame();
+        }
+        if (!this.levelActive) {
+          if (this.player.body) this.player.setVelocity(0, 0);
+          return;
+        }
+
+        const left = this.cursors.left.isDown || this.wasd.A.isDown || touchState.left;
+        const right = this.cursors.right.isDown || this.wasd.D.isDown || touchState.right;
+        const up = this.cursors.up.isDown || this.wasd.W.isDown || touchState.up;
+        const down = this.cursors.down.isDown || this.wasd.S.isDown || touchState.down;
+        let vx = (right ? 1 : 0) - (left ? 1 : 0);
+        let vy = (down ? 1 : 0) - (up ? 1 : 0);
+        if (vx !== 0 && vy !== 0) {
+          vx *= Math.SQRT1_2;
+          vy *= Math.SQRT1_2;
+        }
+        this.player.setVelocity(vx * MOVE_SPEED, vy * MOVE_SPEED);
+      }
+    }
+
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      width: WIDTH,
+      height: HEIGHT,
+      parent: "game",
+      backgroundColor: "#111b3d",
+      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+      physics: { default: "arcade", arcade: { debug: false } },
+      scene: [MathQuest]
+    });
+  </script>
+</body>
+</html>
