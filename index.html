@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101a3d">
-  <title>數學星球大冒險</title>
+  <title>情緒星球大冒險｜情緒學習闖關遊戲</title>
   <style>
     :root {
       color-scheme: dark;
@@ -130,14 +130,14 @@
 </head>
 <body>
   <main>
-    <p class="eyebrow">MATH QUEST · 5 LEVELS</p>
-    <h1>數學星球大冒險</h1>
-    <p class="intro">駕駛小機器人，在星球上找到每一題的正確答案。答對加 10 分，答錯扣 5 分，完成五關就能成為數學探險家！</p>
+    <p class="eyebrow">EMOTION QUEST · 3 LEVELS</p>
+    <h1>情緒星球大冒險</h1>
+    <p class="intro">陪小芽探索心情星球，練習辨認情緒、理解感受，再找到照顧自己的方法。慢慢走、慢慢想，完成三個小任務就能通關。</p>
 
-    <section class="game-card" aria-label="數學星球大冒險遊戲">
+    <section class="game-card" aria-label="情緒星球大冒險遊戲">
       <div id="game"></div>
       <div class="below-game">
-        <p class="how-to"><strong>怎麼玩：</strong>使用方向鍵或 WASD 移動，碰到答案星球作答。手機可按右側方向鍵。</p>
+        <p class="how-to"><strong>怎麼玩：</strong>使用方向鍵或 WASD 移動小芽，碰到你認為合適的答案球。手機和平板可使用方向按鈕。</p>
         <div class="dpad" aria-label="角色移動控制">
           <button type="button" data-dir="up" aria-label="向上">▲</button>
           <button type="button" data-dir="left" aria-label="向左">◀</button>
@@ -146,8 +146,8 @@
         </div>
       </div>
     </section>
-    <p class="note">遊戲不設倒數計時；答錯的星球會消失，正確答案會留在場上，放心慢慢找。</p>
-    <p id="live" class="note" role="status" aria-live="polite">準備開始數學冒險。</p>
+    <p class="note">每關答對加 10 分，答錯扣 5 分（最低 0 分）。情緒沒有好壞；有些情境也可能同時有不同感受。</p>
+    <p id="live" class="note" role="status" aria-live="polite">準備好就按「開始冒險」！</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser&#64;3.90.0/dist/phaser.min.js"></script>
@@ -176,16 +176,35 @@
     });
 
     const levels = [
-      { question: "2 + 3 = ?", answer: 5, choices: [5, 4, 6, 8], skill: "加法暖身" },
-      { question: "9 + 6 = ?", answer: 15, choices: [13, 14, 15, 16], skill: "加法挑戰" },
-      { question: "18 − 7 = ?", answer: 11, choices: [9, 10, 11, 12], skill: "減法探險" },
-      { question: "4 × 5 = ?", answer: 20, choices: [16, 18, 20, 24], skill: "乘法星球" },
-      { question: "36 ÷ 6 = ?", answer: 6, choices: [4, 5, 6, 8], skill: "除法終極關" }
+      {
+        question: "雙手握緊、眉頭皺起來，可能是什麼感受？",
+        answers: ["生氣", "緊張", "害怕"],
+        choices: ["生氣", "緊張", "害怕", "放鬆"],
+        skill: "第一關｜認出情緒",
+        hint: "留意身體的小訊號；同樣的反應也可能有不同原因。",
+        feedback: "緊握和皺眉可能和生氣、緊張或害怕有關；每個人的感受也可能不同。"
+      },
+      {
+        question: "積木倒了、需要重新開始，你可能會有什麼感受？",
+        answers: ["沮喪", "生氣"],
+        choices: ["沮喪", "生氣", "興奮", "安心"],
+        skill: "第二關｜理解感受",
+        hint: "遇到挫折時，感受可能不只一種。",
+        feedback: "理解得很好！遇到挫折時，沮喪或生氣都可能出現。"
+      },
+      {
+        question: "上台前感到緊張，什麼方法能幫助你？",
+        answers: ["深呼吸", "找人聊聊"],
+        choices: ["深呼吸", "找人聊聊", "責怪自己", "假裝沒事"],
+        skill: "第三關｜照顧自己",
+        hint: "選一個能溫柔支持自己的方法。",
+        feedback: "深呼吸或找信任的人聊聊，都是支持自己的好方法。"
+      }
     ];
 
-    class MathQuest extends Phaser.Scene {
+    class EmotionQuest extends Phaser.Scene {
       constructor() {
-        super("MathQuest");
+        super("EmotionQuest");
         this.score = 0;
         this.levelIndex = 0;
         this.started = false;
@@ -199,7 +218,7 @@
         this.createPlayer();
         this.setupKeyboard();
         this.showIntro();
-        this.updateLive("準備開始數學冒險。使用方向鍵或 WASD 移動角色。");
+        this.updateLive("準備開始情緒星球冒險。使用方向鍵或 WASD 移動小芽。");
       }
 
       drawWorld() {
@@ -231,27 +250,32 @@
       }
 
       createHud() {
-        this.add.text(30, 24, "✦ 星星數學站", {
+        this.add.text(30, 24, "✦ 心情星球", {
           fontFamily: "Arial, sans-serif", fontSize: "25px", fontStyle: "bold", color: "#ffffff"
         });
-        this.add.text(33, 61, "收集正確答案，點亮五顆星球", {
+        this.add.text(33, 61, "認出情緒・理解感受・照顧自己", {
           fontFamily: "Arial, sans-serif", fontSize: "15px", color: "#bdc9f0"
         });
 
-        this.levelText = this.add.text(635, 30, "第 1 關 / 共 5 關", {
+        this.levelText = this.add.text(600, 30, "第 1 關 / 共 3 關", {
           fontFamily: "Arial, sans-serif", fontSize: "20px", fontStyle: "bold", color: "#d8e2ff"
         });
-        this.scoreText = this.add.text(842, 29, "★ 0 分", {
+        this.scoreText = this.add.text(930, 29, "★ 0 分", {
           fontFamily: "Arial, sans-serif", fontSize: "21px", fontStyle: "bold", color: "#ffe27c"
         }).setOrigin(1, 0);
 
-        this.questionPanel = this.add.rectangle(WIDTH / 2, 118, 916, 66, 0x273968, .96).setStrokeStyle(2, 0x6175c1, .78);
-        this.questionText = this.add.text(WIDTH / 2, 118, "準備好開始了嗎？", {
-          fontFamily: "Arial, sans-serif", fontSize: "29px", fontStyle: "bold", color: "#ffffff"
+        this.questionPanel = this.add.rectangle(WIDTH / 2, 118, 916, 76, 0x273968, .96).setStrokeStyle(2, 0x6175c1, .78);
+        this.questionText = this.add.text(WIDTH / 2, 105, "準備好開始探索心情了嗎？", {
+          fontFamily: "Arial, sans-serif", fontSize: "24px", fontStyle: "bold", color: "#ffffff",
+          align: "center", wordWrap: { width: 860 }
+        }).setOrigin(.5);
+        this.hintText = this.add.text(WIDTH / 2, 143, "", {
+          fontFamily: "Arial, sans-serif", fontSize: "14px", color: "#cbd6ef", align: "center"
         }).setOrigin(.5);
         this.toastText = this.add.text(WIDTH / 2, 198, "", {
-          fontFamily: "Arial, sans-serif", fontSize: "20px", fontStyle: "bold", color: "#ffffff",
-          backgroundColor: "#18254c", padding: { x: 14, y: 8 }, align: "center"
+          fontFamily: "Arial, sans-serif", fontSize: "18px", fontStyle: "bold", color: "#ffffff",
+          backgroundColor: "#18254c", padding: { x: 14, y: 8 }, align: "center",
+          wordWrap: { width: 760 }
         }).setOrigin(.5).setAlpha(0);
       }
 
@@ -272,10 +296,10 @@
         art.fillCircle(41, 30, 2);
         art.fillStyle(0x1b5360, 1);
         art.fillRoundedRect(22, 45, 18, 5, 2);
-        art.generateTexture("math-robot", 62, 66);
+        art.generateTexture("emotion-bud", 62, 66);
         art.destroy();
 
-        this.player = this.physics.add.sprite(WIDTH / 2, 492, "math-robot");
+        this.player = this.physics.add.sprite(WIDTH / 2, 492, "emotion-bud");
         this.player.setDepth(3).setCollideWorldBounds(true);
         this.player.body.setSize(42, 44).setOffset(10, 15);
         this.player.body.setAllowGravity(false);
@@ -291,15 +315,15 @@
         this.introGroup = this.add.container(0, 0);
         const shade = this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x08112e, .84);
         const panel = this.add.rectangle(WIDTH / 2, 328, 640, 332, 0x202f60, .99).setStrokeStyle(3, 0x8ca0ff, .8);
-        const title = this.add.text(WIDTH / 2, 211, "準備出發了嗎？", {
+        const title = this.add.text(WIDTH / 2, 211, "一起探索心情星球吧！", {
           fontFamily: "Arial, sans-serif", fontSize: "36px", fontStyle: "bold", color: "#fff2ac"
         }).setOrigin(.5);
         const details = this.add.text(WIDTH / 2, 285,
-          "移動小機器人，碰到正確答案星球就能過關！\n答對 +10 分　答錯 −5 分\n一共有 5 關：加法、減法、乘法和除法。",
+          "跟著小芽完成三個小任務：認出情緒、理解感受、照顧自己。\n用方向鍵或 WASD 移動，碰到你認為合適的答案球。\n答對 +10 分，答錯 −5 分（分數最低是 0 分）。",
           { fontFamily: "Arial, sans-serif", fontSize: "21px", color: "#eff2ff", align: "center", lineSpacing: 11 }
         ).setOrigin(.5);
         const buttonBg = this.add.rectangle(WIDTH / 2, 420, 246, 62, 0x4bd6c4, 1).setStrokeStyle(2, 0xc3fff3, .9);
-        const buttonText = this.add.text(WIDTH / 2, 420, "開始闖關  ▶", {
+        const buttonText = this.add.text(WIDTH / 2, 420, "開始冒險  ▶", {
           fontFamily: "Arial, sans-serif", fontSize: "23px", fontStyle: "bold", color: "#102747"
         }).setOrigin(.5);
         buttonBg.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.startGame());
@@ -324,9 +348,10 @@
         this.player.setPosition(WIDTH / 2, 492).setVelocity(0, 0).clearTint();
 
         const level = levels[this.levelIndex];
-        this.levelText.setText(`第 ${this.levelIndex + 1} 關 / 共 ${levels.length} 關`);
-        this.questionText.setText(`${level.skill}　　${level.question}`);
-        this.updateLive(`第 ${this.levelIndex + 1} 關：${level.question}。目前 ${this.score} 分。`);
+        this.levelText.setText("第 " + (this.levelIndex + 1) + " 關 / 共 " + levels.length + " 關");
+        this.questionText.setText(level.skill + "　　" + level.question);
+        this.hintText.setText(level.hint);
+        this.updateLive(level.skill + "：" + level.question + " 目前 " + this.score + " 分。");
         this.toastText.setAlpha(0);
 
         const choices = Phaser.Utils.Array.Shuffle([...level.choices]);
@@ -339,8 +364,10 @@
           const halo = this.add.circle(0, 0, 49, tint, .22);
           const ball = this.add.circle(0, 0, 39, tint, 1).setStrokeStyle(4, 0xdbe6ff, .96);
           const shine = this.add.circle(-12, -15, 7, 0xffffff, .34);
-          const label = this.add.text(0, 2, String(value), {
-            fontFamily: "Arial, sans-serif", fontSize: "34px", fontStyle: "bold", color: "#ffffff"
+          const label = this.add.text(0, 2, value, {
+            fontFamily: "Arial, sans-serif",
+            fontSize: value.length > 3 ? "18px" : value.length > 2 ? "22px" : "27px",
+            fontStyle: "bold", color: "#ffffff"
           }).setOrigin(.5);
           const orb = this.add.container(x, y, [halo, ball, shine, label]).setDepth(2);
           orb.answerValue = value;
@@ -357,25 +384,28 @@
         if (!this.levelActive || orb.collected) return;
         orb.collected = true;
         orb.body.enable = false;
-        const correct = orb.answerValue === levels[this.levelIndex].answer;
-        this.score += correct ? 10 : -5;
-        this.updateScore();
+        const level = levels[this.levelIndex];
+        const correct = level.answers.includes(orb.answerValue);
 
         if (correct) {
+          this.score += 10;
+          this.updateScore();
           this.levelActive = false;
           this.player.setTint(0xffef9a);
-          this.showToast("答對了！ +10 分　下一關出發！", "#fff1a6");
+          this.showToast("答對了！ +10 分　" + level.feedback, "#fff1a6");
           this.answers.forEach((item) => { if (item.body) item.body.enable = false; });
           this.tweens.add({ targets: this.player, scale: 1.18, duration: 190, yoyo: true, repeat: 1 });
-          this.updateLive(`答對了！加 10 分，目前 ${this.score} 分。`);
+          this.updateLive(level.feedback + " 加 10 分，目前 " + this.score + " 分。");
           this.time.delayedCall(1150, () => {
             this.levelIndex += 1;
             if (this.levelIndex >= levels.length) this.showFinish();
             else this.startLevel();
           });
         } else {
-          this.showToast("這顆不對，−5 分！再找找看。", "#ffd0d0");
-          this.updateLive(`這個答案不正確，扣 5 分。目前 ${this.score} 分。`);
+          this.score = Math.max(0, this.score - 5);
+          this.updateScore();
+          this.showToast(level.hint + "　−5 分，再試試看。", "#ffd0d0");
+          this.updateLive(level.hint + "扣 5 分，目前 " + this.score + " 分。");
           this.tweens.add({ targets: orb, alpha: 0, scale: .45, duration: 220, onComplete: () => orb.destroy() });
         }
       }
@@ -393,16 +423,21 @@
       showFinish() {
         this.levelActive = false;
         this.player.setVelocity(0, 0).clearTint();
-        this.questionText.setText("五顆星球都點亮了！");
-        const praise = this.score >= 50 ? "太厲害了！你是數學星球高手！" : this.score >= 25 ? "做得很好！繼續保持好奇心！" : "完成五關了！再玩一次，挑戰更高分！";
+        this.questionText.setText("三個心情任務都完成了！");
+        this.hintText.setText("感受沒有好壞，謝謝你用心探索。");
+        const praise = this.score === 30
+          ? "觀察得真仔細！你完成了所有心情任務。"
+          : this.score >= 15
+            ? "做得很好！認識感受，是照顧自己的第一步。"
+            : "謝謝你完成探索。每一次練習，都讓你更認識自己。";
 
         const group = this.add.container(0, 0).setDepth(10);
         const shade = this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x08112e, .88);
         const panel = this.add.rectangle(WIDTH / 2, 328, 650, 342, 0x202f60, .99).setStrokeStyle(3, 0x8ca0ff, .8);
-        const title = this.add.text(WIDTH / 2, 218, "🎉 闖關成功！", {
+        const title = this.add.text(WIDTH / 2, 218, "🎉 冒險完成！", {
           fontFamily: "Arial, sans-serif", fontSize: "37px", fontStyle: "bold", color: "#fff2ac"
         }).setOrigin(.5);
-        const score = this.add.text(WIDTH / 2, 295, `最後得分：${this.score} 分`, {
+        const score = this.add.text(WIDTH / 2, 295, "最後得分：" + this.score + " / 30 分", {
           fontFamily: "Arial, sans-serif", fontSize: "30px", fontStyle: "bold", color: "#ffffff"
         }).setOrigin(.5);
         const message = this.add.text(WIDTH / 2, 353, praise, {
@@ -416,12 +451,12 @@
           group.destroy(true);
           this.started = false;
           this.showIntro();
-          this.updateLive("準備再次挑戰五個關卡。");
+          this.updateLive("準備再次探索心情星球。");
         };
         buttonBg.setInteractive({ useHandCursor: true }).on("pointerdown", restart);
         buttonText.setInteractive({ useHandCursor: true }).on("pointerdown", restart);
         group.add([shade, panel, title, score, message, buttonBg, buttonText]);
-        this.updateLive(`闖關完成，總分 ${this.score} 分。${praise}`);
+        this.updateLive("情緒星球冒險完成，總分 " + this.score + " 分。" + praise);
       }
 
       updateLive(message) {
@@ -459,7 +494,7 @@
       backgroundColor: "#111b3d",
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
       physics: { default: "arcade", arcade: { debug: false } },
-      scene: [MathQuest]
+      scene: [EmotionQuest]
     });
   </script>
 </body>
